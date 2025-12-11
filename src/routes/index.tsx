@@ -595,7 +595,7 @@ function Index() {
         <ThemeSwitcherHome />
 
         <div className="flex flex-col items-center gap-2 sm:flex-row">
-          <p className="flex items-center whitespace-nowrap text-center text-sm font-medium text-primary/60">
+          <span className="flex items-center whitespace-nowrap text-center text-sm font-medium text-primary/60">
             Based on&nbsp;
             <a
               href="https://remix-saas.fly.dev"
@@ -605,13 +605,14 @@ function Index() {
             >
               the Open-Source Remix SaaS by&nbsp;
             </a>
-            <p className="flex items-center whitespace-nowrap text-center text-sm font-medium text-primary/60">
-              <a href="https://bento.me/danielkanem?utm_source=remixconvexsaas">
-                DanielKanem.
-              </a>
-            </p>
-          </p>
-          <p className="flex items-center whitespace-nowrap text-center text-sm font-medium text-primary/60">
+            <a
+              href="https://bento.me/danielkanem?utm_source=remixconvexsaas"
+              className="text-primary hover:underline"
+            >
+              DanielKanem.
+            </a>
+          </span>
+          <span className="flex items-center whitespace-nowrap text-center text-sm font-medium text-primary/60">
             Source code available on&nbsp;{" "}
             <a
               href="https://github.com/get-convex/convex-saas"
@@ -621,7 +622,7 @@ function Index() {
             >
               GitHub.
             </a>
-          </p>
+          </span>
         </div>
       </footer>
 
