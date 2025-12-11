@@ -4,7 +4,7 @@
 
 <div align="center">
   <p>
-  A production-ready Convex Stack for your next SaaS application with Stripe integration, TanStack, Resend, Tailwindcss, and shadcn.
+  A production-ready Convex Stack for your next SaaS application with Mayar integration, TanStack, Resend, Tailwindcss, and shadcn.
   </p>
 </div>
 
@@ -23,7 +23,7 @@ Features provided out of the box:
 
 - 🧩 **Convex**: A complete, reactive, typesafe backend with authentication and file storage.
 - ⚡ **Vite**: Next-Gen Frontend Tooling.
-- 🛍️ **Stripe**: Subscription Plans, Customer Portal, and more.
+- 🛍️ **Mayar**: Subscription Plans, Customer Portal, and more.
 - 🔑 **Authentication**: Email Code and Social Logins.
 - 🎨 **TailwindCSS**: Utility-First CSS Framework.
 - 📐 **ShadCN**: Composable React components.
