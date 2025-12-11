@@ -8,6 +8,16 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { getLocaleCurrency } from "@/utils/misc";
 import { CURRENCIES, PLANS } from "@cvx/schema";
 
+interface Plan {
+  _id: string;
+  name: string;
+  description: string;
+  prices: {
+    month: { usd: { stripeId: string; amount: number }; eur: { stripeId: string; amount: number } };
+    year: { usd: { stripeId: string; amount: number }; eur: { stripeId: string; amount: number } };
+  };
+}
+
 export const Route = createFileRoute(
   "/_app/_auth/dashboard/_layout/settings/billing",
 )({
@@ -113,7 +123,7 @@ export default function BillingSettings() {
 
         {user.subscription?.planId === plans.free._id && (
           <div className="flex w-full flex-col items-center justify-evenly gap-2 border-border p-6 pt-0">
-            {Object.values(plans).map((plan) => (
+            {Object.values(plans).map((plan: Plan) => (
               <div
                 key={plan._id}
                 tabIndex={0}
