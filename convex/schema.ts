@@ -83,6 +83,27 @@ const schema = defineSchema({
   })
     .index("userId", ["userId"])
     .index("stripeId", ["stripeId"]),
+  paymentTransactions: defineTable({
+    userId: v.id("users"),
+    amount: v.number(),
+    currency: v.string(),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("completed"),
+      v.literal("failed"),
+      v.literal("cancelled"),
+    ),
+    mayarInvoiceId: v.optional(v.string()),
+    mayarTransactionId: v.optional(v.string()),
+    redirectUrl: v.optional(v.string()),
+    verifiedAt: v.optional(v.number()),
+    planId: v.optional(v.id("plans")),
+    planInterval: intervalValidator,
+  })
+    .index("userId", ["userId"])
+    .index("status", ["status"])
+    .index("mayarInvoiceId", ["mayarInvoiceId"])
+    .index("mayarTransactionId", ["mayarTransactionId"]),
 });
 
 export default schema;
