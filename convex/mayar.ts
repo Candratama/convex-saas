@@ -16,7 +16,7 @@ export class MayarPaymentService {
   private readonly apiUrl: string;
   private readonly apiKey: string;
 
-  constructor(private supabase: any) {
+  constructor() {
     this.apiUrl = MAYAR_API_URL || "https://api.mayar.id/hl/v1";
     this.apiKey = MAYAR_API_KEY || "";
     
@@ -144,7 +144,7 @@ export const createSubscriptionCheckout = action({
     //   throw new Error("Price not found for selected interval and currency");
     // }
 
-    // TODO: Create payment transaction record
+    // TODO: Create payment transaction record after schema types are generated
     // const paymentRecordId = await ctx.db.insert("paymentTransactions", {
     //   userId: args.userId,
     //   amount: price.amount,
@@ -156,16 +156,16 @@ export const createSubscriptionCheckout = action({
 
     try {
       // Create Mayar invoice
-      const mayarService = new MayarPaymentService(null);
+      const mayarService = new MayarPaymentService();
       const invoice = await mayarService.createPaymentInvoice({
         userId: args.userId,
         planId: args.planId,
-        amount: 1000, // TODO: Get from plan.prices
+        amount: 1000, // TODO: Get from plan.prices after schema types are generated
         currency: args.currency,
         planInterval: args.planInterval,
       });
 
-      // TODO: Update payment record with Mayar invoice ID
+      // TODO: Update payment record with Mayar invoice ID after schema types are generated
       // await ctx.db.patch(paymentRecordId, {
       //   mayarInvoiceId: invoice.invoiceId,
       //   redirectUrl: `${SITE_URL}/dashboard/checkout?payment_redirect=true&payment_id=${paymentRecordId}`,
@@ -173,7 +173,7 @@ export const createSubscriptionCheckout = action({
 
       return invoice.paymentUrl;
     } catch (error) {
-      // TODO: Update payment record to failed
+      // TODO: Update payment record to failed after schema types are generated
       // await ctx.db.patch(paymentRecordId, { status: "failed" });
       throw error;
     }
@@ -182,16 +182,40 @@ export const createSubscriptionCheckout = action({
 
 export const verifyPaymentAndActivate = internalAction({
   args: {
-    paymentRecordId: v.string(), // Use string for now since paymentTransactions table types aren't generated yet
+    paymentRecordId: v.string(), // Use string for now
   },
   handler: async (ctx, args) => {
-    // TODO: Get payment record from database
-    // const payment = await ctx.db.get(args.paymentRecordId);
+    // TODO: Get payment record from database after schema types are generated
+    // const payment = await ctx.db
+    //   .query("paymentTransactions")
+    //   .withIndex("userId", (q) => q.eq("_id", args.paymentRecordId as any))
+    //   .unique();
 
     // For now, just return a mock response
     return { 
       success: true, 
-      message: "Payment verification placeholder - database operations will be implemented in Task 5" 
+      message: "Payment verification placeholder - database operations will be implemented after schema types are generated" 
     };
+
+    // TODO: Complete verification logic after schema types are generated
+    // if (!payment) {
+    //   throw new Error("Payment record not found");
+    // }
+
+    // if (payment.status === "completed") {
+    //   return { success: true, message: "Payment already verified" };
+    // }
+
+    // // Verify payment with Mayar
+    // const mayarService = new MayarPaymentService();
+    // const verification = await mayarService.verifyPayment(payment.mayarInvoiceId!);
+
+    // if (!verification.verified) {
+    //   await ctx.db.patch(payment._id, { status: "failed" });
+    //   throw new Error("Payment not verified");
+    // }
+
+    // // Get current subscription and update/create as needed
+    // // ... database operations ...
   },
 });
