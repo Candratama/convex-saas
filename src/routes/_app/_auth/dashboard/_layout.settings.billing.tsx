@@ -3,13 +3,14 @@ import { Switch } from "@/ui/switch";
 import { Button } from "@/ui/button";
 import { createFileRoute } from "@tanstack/react-router";
 import { api } from "~/convex/_generated/api";
+import { Id } from "~/convex/_generated/dataModel";
 import { convexQuery, useConvexAction } from "@convex-dev/react-query";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { getLocaleCurrency } from "@/utils/misc";
 import { CURRENCIES, PLANS } from "@cvx/schema";
 
 interface Plan {
-  _id: string;
+  _id: Id<"plans">;
   name: string;
   description: string;
   prices: {

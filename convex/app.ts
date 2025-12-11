@@ -1,4 +1,3 @@
-import { internal } from "@cvx/_generated/api";
 import { mutation, query } from "@cvx/_generated/server";
 import { auth } from "@cvx/auth";
 import { currencyValidator, PLANS } from "@cvx/schema";

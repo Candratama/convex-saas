@@ -9,6 +9,7 @@ import { useEffect } from "react";
 import { useLocation } from "@tanstack/react-router";
 import { useConvexAction } from "@convex-dev/react-query";
 import { api } from "~/convex/_generated/api";
+import { Id } from "~/convex/_generated/dataModel";
 
 export default function PaymentSuccessHandler() {
   const location = useLocation();
@@ -21,9 +22,9 @@ export default function PaymentSuccessHandler() {
 
     if (paymentRedirect === "true" && paymentId) {
       console.log("Detected Mayar payment redirect, verifying payment...");
-      
-      // Verify payment
-      verifyPayment({ paymentRecordId: paymentId })
+
+      // Verify payment - cast paymentId to the correct type
+      verifyPayment({ paymentRecordId: paymentId as Id<"paymentTransactions"> })
         .then((result) => {
           console.log("Payment verified successfully:", result);
           // TODO: Show success notification to user
