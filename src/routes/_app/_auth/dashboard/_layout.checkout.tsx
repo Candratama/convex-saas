@@ -8,6 +8,7 @@ import { PLANS } from "@cvx/schema";
 import { useQuery } from "@tanstack/react-query";
 import { convexQuery } from "@convex-dev/react-query";
 import { api } from "@cvx/_generated/api";
+import PaymentSuccessHandler from "@/components/payment-success-handler";
 
 export const Route = createFileRoute("/_app/_auth/dashboard/_layout/checkout")({
   component: DashboardCheckout,
@@ -28,12 +29,9 @@ export default function DashboardCheckout() {
     const timeoutId = setTimeout(() => {
       setIsPending(false);
     }, 8000);
-    return () => clearTimeout(timeoutId);
-  }, []);
 
-  if (!user) {
-    return null;
-  }
+    return () => clearTimeout(timeoutId);
+  }, [isFreePlan]);
 
   return (
     <div className="flex h-full w-full bg-secondary px-6 py-8 dark:bg-black">
@@ -54,6 +52,9 @@ export default function DashboardCheckout() {
           </div>
           <div className="relative mx-auto flex w-full  flex-col items-center p-6">
             <div className="relative flex w-full flex-col items-center justify-center gap-6 overflow-hidden rounded-lg border border-border bg-secondary px-6 py-24 dark:bg-card">
+              {/* Mayar Payment Success Handler */}
+              <PaymentSuccessHandler />
+              
               <div className="z-10 flex flex-col items-center gap-4">
                 <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-primary/20 bg-card hover:border-primary/40">
                   {isFreePlan && isPending && (

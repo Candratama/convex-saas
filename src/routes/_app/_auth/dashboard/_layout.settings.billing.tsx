@@ -40,44 +40,35 @@ export default function BillingSettings() {
       : "month",
   );
 
-  // TODO: Replace with Mayar payment functions
-  // const { mutateAsync: createSubscriptionCheckout } = useMutation({
-  //   mutationFn: useConvexAction(api.stripe.createSubscriptionCheckout),
-  // });
-  // const { mutateAsync: createCustomerPortal } = useMutation({
-  //   mutationFn: useConvexAction(api.stripe.createCustomerPortal),
-  // });
+  // Mayar payment functions
+  const { mutateAsync: createSubscriptionCheckout } = useMutation({
+    mutationFn: useConvexAction(api.mayar.createSubscriptionCheckout),
+  });
 
   const currency = getLocaleCurrency();
 
-  // TODO: Replace with Mayar payment handlers
-  // const handleCreateSubscriptionCheckout = async () => {
-  //   if (!user || !selectedPlanId) {
-  //     return;
-  //   }
-  //   const checkoutUrl = await createSubscriptionCheckout({
-  //     userId: user._id,
-  //     planId: selectedPlanId,
-  //     planInterval: selectedPlanInterval,
-  //     currency,
-  //   });
-  //   if (!checkoutUrl) {
-  //     return;
-  //   }
-  //   window.location.href = checkoutUrl;
-  // };
-  // const handleCreateCustomerPortal = async () => {
-  //   if (!user?.customerId) {
-  //     return;
-  //   }
-  //   const customerPortalUrl = await createCustomerPortal({
-  //     userId: user._id,
-  //   });
-  //   if (!customerPortalUrl) {
-  //     return;
-  //   }
-  //   window.location.href = customerPortalUrl;
-  // };
+  const handleCreateSubscriptionCheckout = async () => {
+    if (!user || !selectedPlanId) {
+      return;
+    }
+    try {
+      const checkoutUrl = await createSubscriptionCheckout({
+        userId: user._id,
+        planId: selectedPlanId,
+        planInterval: selectedPlanInterval,
+        currency,
+      });
+      
+      if (!checkoutUrl) {
+        return;
+      }
+      
+      window.location.href = checkoutUrl;
+    } catch (error) {
+      console.error("Failed to create checkout:", error);
+      // TODO: Show error notification to user
+    }
+  };
 
   if (!user || !plans) {
     return null;
@@ -222,7 +213,7 @@ export default function BillingSettings() {
             <Button
               type="submit"
               size="sm"
-              // onClick={handleCreateSubscriptionCheckout}
+              onClick={handleCreateSubscriptionCheckout}
               disabled={selectedPlanId === plans.free._id}
             >
               Upgrade to PRO
