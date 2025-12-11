@@ -74,14 +74,15 @@ export const completeOnboarding = mutation({
     if (user.customerId) {
       return;
     }
-    await ctx.scheduler.runAfter(
-      0,
-      internal.stripe.PREAUTH_createStripeCustomer,
-      {
-        currency: args.currency,
-        userId,
-      },
-    );
+    // TODO: Replace with Mayar customer creation
+    // await ctx.scheduler.runAfter(
+    //   0,
+    //   internal.stripe.PREAUTH_createStripeCustomer,
+    //   {
+    //     currency: args.currency,
+    //     userId,
+    //   },
+    // );
   },
 });
 
@@ -161,10 +162,11 @@ export const deleteCurrentUserAccount = mutation({
       console.error("No subscription found");
     } else {
       await ctx.db.delete(subscription._id);
-      await ctx.scheduler.runAfter(
-        0,
-        internal.stripe.cancelCurrentUserSubscriptions,
-      );
+      // TODO: Replace with Mayar subscription cancellation
+      // await ctx.scheduler.runAfter(
+      //   0,
+      //   internal.stripe.cancelCurrentUserSubscriptions,
+      // );
     }
     await ctx.db.delete(userId);
     await asyncMap(["resend-otp", "github"], async (provider) => {

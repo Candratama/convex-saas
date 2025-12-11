@@ -40,42 +40,44 @@ export default function BillingSettings() {
       : "month",
   );
 
-  const { mutateAsync: createSubscriptionCheckout } = useMutation({
-    mutationFn: useConvexAction(api.stripe.createSubscriptionCheckout),
-  });
-  const { mutateAsync: createCustomerPortal } = useMutation({
-    mutationFn: useConvexAction(api.stripe.createCustomerPortal),
-  });
+  // TODO: Replace with Mayar payment functions
+  // const { mutateAsync: createSubscriptionCheckout } = useMutation({
+  //   mutationFn: useConvexAction(api.stripe.createSubscriptionCheckout),
+  // });
+  // const { mutateAsync: createCustomerPortal } = useMutation({
+  //   mutationFn: useConvexAction(api.stripe.createCustomerPortal),
+  // });
 
   const currency = getLocaleCurrency();
 
-  const handleCreateSubscriptionCheckout = async () => {
-    if (!user || !selectedPlanId) {
-      return;
-    }
-    const checkoutUrl = await createSubscriptionCheckout({
-      userId: user._id,
-      planId: selectedPlanId,
-      planInterval: selectedPlanInterval,
-      currency,
-    });
-    if (!checkoutUrl) {
-      return;
-    }
-    window.location.href = checkoutUrl;
-  };
-  const handleCreateCustomerPortal = async () => {
-    if (!user?.customerId) {
-      return;
-    }
-    const customerPortalUrl = await createCustomerPortal({
-      userId: user._id,
-    });
-    if (!customerPortalUrl) {
-      return;
-    }
-    window.location.href = customerPortalUrl;
-  };
+  // TODO: Replace with Mayar payment handlers
+  // const handleCreateSubscriptionCheckout = async () => {
+  //   if (!user || !selectedPlanId) {
+  //     return;
+  //   }
+  //   const checkoutUrl = await createSubscriptionCheckout({
+  //     userId: user._id,
+  //     planId: selectedPlanId,
+  //     planInterval: selectedPlanInterval,
+  //     currency,
+  //   });
+  //   if (!checkoutUrl) {
+  //     return;
+  //   }
+  //   window.location.href = checkoutUrl;
+  // };
+  // const handleCreateCustomerPortal = async () => {
+  //   if (!user?.customerId) {
+  //     return;
+  //   }
+  //   const customerPortalUrl = await createCustomerPortal({
+  //     userId: user._id,
+  //   });
+  //   if (!customerPortalUrl) {
+  //     return;
+  //   }
+  //   window.location.href = customerPortalUrl;
+  // };
 
   if (!user || !plans) {
     return null;
@@ -220,7 +222,7 @@ export default function BillingSettings() {
             <Button
               type="submit"
               size="sm"
-              onClick={handleCreateSubscriptionCheckout}
+              // onClick={handleCreateSubscriptionCheckout}
               disabled={selectedPlanId === plans.free._id}
             >
               Upgrade to PRO
@@ -244,7 +246,7 @@ export default function BillingSettings() {
           <p className="text-sm font-normal text-primary/60">
             You will be redirected to the Stripe Customer Portal.
           </p>
-          <Button type="submit" size="sm" onClick={handleCreateCustomerPortal}>
+          <Button type="submit" size="sm" /* onClick={handleCreateCustomerPortal} */>
             Manage
           </Button>
         </div>
