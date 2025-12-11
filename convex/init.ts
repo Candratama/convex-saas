@@ -1,16 +1,9 @@
 import { asyncMap } from "convex-helpers";
-import { ERRORS } from "~/errors";
 import { internalAction, internalMutation } from "@cvx/_generated/server";
 import schema, {
-  CURRENCIES,
-  Currency,
-  Interval,
-  INTERVALS,
-  PlanKey,
   PLANS,
 } from "@cvx/schema";
 import { internal } from "@cvx/_generated/api";
-// import { stripe } from "@cvx/stripe";
 
 const seedProducts = [
   {
@@ -18,13 +11,13 @@ const seedProducts = [
     name: "Free",
     description: "Start with the basics, upgrade anytime.",
     prices: {
-      [INTERVALS.MONTH]: {
-        [CURRENCIES.USD]: 0,
-        [CURRENCIES.EUR]: 0,
+      month: {
+        usd: 0,
+        eur: 0,
       },
-      [INTERVALS.YEAR]: {
-        [CURRENCIES.USD]: 0,
-        [CURRENCIES.EUR]: 0,
+      year: {
+        usd: 0,
+        eur: 0,
       },
     },
   },
@@ -33,13 +26,13 @@ const seedProducts = [
     name: "Pro",
     description: "Access to all features and unlimited projects.",
     prices: {
-      [INTERVALS.MONTH]: {
-        [CURRENCIES.USD]: 1990,
-        [CURRENCIES.EUR]: 1990,
+      month: {
+        usd: 1990,
+        eur: 1990,
       },
-      [INTERVALS.YEAR]: {
-        [CURRENCIES.USD]: 19990,
-        [CURRENCIES.EUR]: 19990,
+      year: {
+        usd: 19990,
+        eur: 19990,
       },
     },
   },
