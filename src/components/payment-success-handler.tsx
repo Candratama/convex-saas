@@ -6,15 +6,16 @@
 "use client";
 
 import { useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useLocation } from "@tanstack/react-router";
 import { useConvexAction } from "@convex-dev/react-query";
 import { api } from "~/convex/_generated/api";
 
 export default function PaymentSuccessHandler() {
-  const searchParams = useSearchParams();
-  const verifyPayment = useConvexAction(api.mayar.verifyPaymentAndActivate);
+  const location = useLocation();
+  const verifyPayment = useConvexAction(api.mayar.verifyPayment);
 
   useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
     const paymentRedirect = searchParams.get("payment_redirect");
     const paymentId = searchParams.get("payment_id");
 
@@ -33,7 +34,7 @@ export default function PaymentSuccessHandler() {
           // TODO: Show error notification to user
         });
     }
-  }, [searchParams, verifyPayment]);
+  }, [location, verifyPayment]);
 
   return null;
 }

@@ -8,8 +8,7 @@ import {
   internalAction,
 } from "@cvx/_generated/server";
 import { v } from "convex/values";
-import { PLANS } from "@cvx/schema";
-import { api } from "~/convex/_generated/api";
+import { api, internal } from "~/convex/_generated/api";
 import { MAYAR_API_KEY, MAYAR_API_URL, SITE_URL } from "@cvx/env";
 
 export class MayarPaymentService {
@@ -96,7 +95,7 @@ export class MayarPaymentService {
       }
 
       const transactions = await response.json();
-      const transaction = transactions.data?.find((t: any) => t.id === paymentId);
+      const transaction = transactions.data?.find((t: { id: string; status: string; amount: number; currency: string }) => t.id === paymentId);
 
       if (!transaction) {
         throw new Error("Payment transaction not found");
@@ -154,29 +153,23 @@ export const createSubscriptionCheckout = action({
     //   planInterval: args.planInterval,
     // });
 
-    try {
-      // Create Mayar invoice
-      const mayarService = new MayarPaymentService();
-      const invoice = await mayarService.createPaymentInvoice({
-        userId: args.userId,
-        planId: args.planId,
-        amount: 1000, // TODO: Get from plan.prices after schema types are generated
-        currency: args.currency,
-        planInterval: args.planInterval,
-      });
+    // Create Mayar invoice
+    const mayarService = new MayarPaymentService();
+    const invoice = await mayarService.createPaymentInvoice({
+      userId: args.userId,
+      planId: args.planId,
+      amount: 1000, // TODO: Get from plan.prices after schema types are generated
+      currency: args.currency,
+      planInterval: args.planInterval,
+    });
 
-      // TODO: Update payment record with Mayar invoice ID after schema types are generated
-      // await ctx.db.patch(paymentRecordId, {
-      //   mayarInvoiceId: invoice.invoiceId,
-      //   redirectUrl: `${SITE_URL}/dashboard/checkout?payment_redirect=true&payment_id=${paymentRecordId}`,
-      // });
+    // TODO: Update payment record with Mayar invoice ID after schema types are generated
+    // await ctx.db.patch(paymentRecordId, {
+    //   mayarInvoiceId: invoice.invoiceId,
+    //   redirectUrl: `${SITE_URL}/dashboard/checkout?payment_redirect=true&payment_id=${paymentRecordId}`,
+    // });
 
-      return invoice.paymentUrl;
-    } catch (error) {
-      // TODO: Update payment record to failed after schema types are generated
-      // await ctx.db.patch(paymentRecordId, { status: "failed" });
-      throw error;
-    }
+    return invoice.paymentUrl;
   },
 });
 
@@ -217,5 +210,17 @@ export const verifyPaymentAndActivate = internalAction({
 
     // // Get current subscription and update/create as needed
     // // ... database operations ...
+  },
+});
+
+// Public wrapper for frontend verification
+export const verifyPayment = action({
+  args: {
+    paymentRecordId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.runAction(internal.mayar.verifyPaymentAndActivate, {
+      paymentRecordId: args.paymentRecordId,
+    });
   },
 });
