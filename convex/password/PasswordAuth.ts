@@ -5,7 +5,6 @@ import { DataModel } from "../_generated/dataModel";
 import { Resend as ResendAPI } from "resend";
 import { generateRandomString } from "@oslojs/crypto/random";
 import type { RandomReader } from "@oslojs/crypto/random";
-import { hash as argon2Hash, verify as argon2Verify } from "@node-rs/argon2";
 import { AUTH_EMAIL, AUTH_RESEND_KEY } from "@cvx/env";
 
 const random: RandomReader = {
@@ -112,7 +111,7 @@ function validatePasswordRequirements(password: string): void {
   }
 }
 
-// Main Password provider export
+// Main Password provider export (uses Scrypt by default)
 export const PasswordAuth = Password<DataModel>({
   id: "password",
   profile(params) {
@@ -123,22 +122,4 @@ export const PasswordAuth = Password<DataModel>({
   validatePasswordRequirements,
   verify: ResendOTPVerify,
   reset: ResendOTPPasswordReset,
-  crypto: {
-    // Use Argon2id for password hashing (more secure than bcrypt)
-    async hashSecret(password: string): Promise<string> {
-      return await argon2Hash(password, {
-        memoryCost: 19456, // 19 MiB
-        timeCost: 2,
-        outputLen: 32,
-        parallelism: 1,
-      });
-    },
-    async verifySecret(password: string, hashedPassword: string): Promise<boolean> {
-      try {
-        return await argon2Verify(hashedPassword, password);
-      } catch {
-        return false;
-      }
-    },
-  },
 });

@@ -7,10 +7,7 @@ import { Button } from "@/ui/button";
 import { Checkbox } from "@/ui/checkbox";
 import { Label } from "@/ui/label";
 import { useForm } from "@tanstack/react-form";
-import { zodValidator } from "@tanstack/zod-form-adapter";
 import { useEffect, useState } from "react";
-import { Route as OnboardingUsernameRoute } from "@/routes/_app/_auth/onboarding/_layout.username";
-import { Route as DashboardRoute } from "@/routes/_app/_auth/dashboard/_layout.index";
 import { useQuery } from "@tanstack/react-query";
 import { convexQuery, useConvexAuth } from "@convex-dev/react-query";
 import { api } from "@cvx/_generated/api";
@@ -29,11 +26,11 @@ function Login() {
       return;
     }
     if (!isLoading && isAuthenticated && !user.username) {
-      navigate({ to: OnboardingUsernameRoute.fullPath });
+      navigate({ to: "/onboarding/username" });
       return;
     }
     if (!isLoading && isAuthenticated) {
-      navigate({ to: DashboardRoute.fullPath });
+      navigate({ to: "/dashboard" });
       return;
     }
   }, [user, isLoading, isAuthenticated, navigate]);
@@ -49,7 +46,6 @@ function LoginForm() {
   const [rememberMe, setRememberMe] = useState(false);
 
   const form = useForm({
-    validatorAdapter: zodValidator(),
     defaultValues: {
       email: "",
       password: "",
@@ -116,9 +112,9 @@ function LoginForm() {
               />
             )}
           />
-          {form.state.fieldMeta.email?.errors.length > 0 && (
+          {(form.state.fieldMeta.email?.errors?.length ?? 0) > 0 && (
             <span className="text-sm text-destructive">
-              {form.state.fieldMeta.email?.errors.join(" ")}
+              {form.state.fieldMeta.email?.errors?.join(" ")}
             </span>
           )}
         </div>
@@ -155,9 +151,9 @@ function LoginForm() {
               </div>
             )}
           />
-          {form.state.fieldMeta.password?.errors.length > 0 && (
+          {(form.state.fieldMeta.password?.errors?.length ?? 0) > 0 && (
             <span className="text-sm text-destructive">
-              {form.state.fieldMeta.password?.errors.join(" ")}
+              {form.state.fieldMeta.password?.errors?.join(" ")}
             </span>
           )}
         </div>

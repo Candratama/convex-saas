@@ -6,10 +6,7 @@ import { Input } from "@/ui/input";
 import { Button } from "@/ui/button";
 import { Label } from "@/ui/label";
 import { useForm } from "@tanstack/react-form";
-import { zodValidator } from "@tanstack/zod-form-adapter";
 import { useEffect, useState } from "react";
-import { Route as OnboardingUsernameRoute } from "@/routes/_app/_auth/onboarding/_layout.username";
-import { Route as DashboardRoute } from "@/routes/_app/_auth/dashboard/_layout.index";
 import { useQuery } from "@tanstack/react-query";
 import { convexQuery, useConvexAuth } from "@convex-dev/react-query";
 import { api } from "@cvx/_generated/api";
@@ -27,7 +24,9 @@ const passwordSchema = z
   .regex(/\d/, "Password must contain at least one number");
 
 function Register() {
-  const [step, setStep] = useState<"email" | { email: string }>("email");
+  const [step, setStep] = useState<
+    "register" | { email: string; password: string }
+  >("register");
   const { isAuthenticated, isLoading } = useConvexAuth();
   const { data: user } = useQuery(convexQuery(api.app.getCurrentUser, {}));
   const navigate = useNavigate();
@@ -37,55 +36,78 @@ function Register() {
       return;
     }
     if (!isLoading && isAuthenticated && !user.username) {
-      navigate({ to: OnboardingUsernameRoute.fullPath });
+      navigate({ to: "/onboarding/username" });
       return;
     }
     if (!isLoading && isAuthenticated) {
-      navigate({ to: DashboardRoute.fullPath });
+      navigate({ to: "/dashboard" });
       return;
     }
   }, [user, isLoading, isAuthenticated, navigate]);
 
-  if (step === "email") {
-    return <EmailForm onSubmit={(email) => setStep({ email })} />;
+  if (step === "register") {
+    return (
+      <RegisterForm
+        onSubmit={(email, password) => setStep({ email, password })}
+      />
+    );
   }
   return (
-    <VerifyAndPasswordForm email={step.email} onBack={() => setStep("email")} />
+    <VerifyCodeForm
+      email={step.email}
+      password={step.password}
+      onBack={() => setStep("register")}
+    />
   );
 }
 
-function EmailForm({ onSubmit }: { onSubmit: (email: string) => void }) {
+function RegisterForm({
+  onSubmit,
+}: {
+  onSubmit: (email: string, password: string) => void;
+}) {
   const { signIn } = useAuthActions();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const form = useForm({
-    validatorAdapter: zodValidator(),
     defaultValues: {
       email: "",
+      password: "",
+      confirmPassword: "",
     },
     onSubmit: async ({ value }) => {
+      if (value.password !== value.confirmPassword) {
+        setError("Password tidak sama");
+        return;
+      }
+
       setIsSubmitting(true);
       setError(null);
       try {
-        // Send verification code for sign up
+        // Sign up with email and password - this triggers email verification
         await signIn("password", {
           flow: "signUp",
           email: value.email,
-          password: "temp-placeholder-will-be-set-after-verification",
+          password: value.password,
         });
-        onSubmit(value.email);
+        // Move to verification step
+        onSubmit(value.email, value.password);
       } catch (err: unknown) {
         const errorMessage = err instanceof Error ? err.message : String(err);
         if (
           errorMessage.includes("already registered") ||
-          errorMessage.includes("already exists")
+          errorMessage.includes("already exists") ||
+          errorMessage.includes("Account already exists")
         ) {
           setError("Email sudah terdaftar. Silakan login.");
+        } else if (errorMessage.includes("Could not send")) {
+          // Email sent successfully, verification code sent
+          onSubmit(value.email, value.password);
         } else {
-          // For signUp flow, we need to trigger email-verification
-          // This is the expected flow - continue to verification
-          onSubmit(value.email);
+          setError(errorMessage || "Terjadi kesalahan. Silakan coba lagi.");
         }
       } finally {
         setIsSubmitting(false);
@@ -100,7 +122,7 @@ function EmailForm({ onSubmit }: { onSubmit: (email: string) => void }) {
           Create Account
         </h3>
         <p className="text-center text-base font-normal text-primary/60">
-          Enter your email to get started.
+          Enter your details to get started.
         </p>
       </div>
 
@@ -112,6 +134,7 @@ function EmailForm({ onSubmit }: { onSubmit: (email: string) => void }) {
           form.handleSubmit();
         }}
       >
+        {/* Email Field */}
         <div className="flex w-full flex-col gap-1.5">
           <Label htmlFor="email">Email</Label>
           <form.Field
@@ -137,139 +160,14 @@ function EmailForm({ onSubmit }: { onSubmit: (email: string) => void }) {
               />
             )}
           />
-          {form.state.fieldMeta.email?.errors.length > 0 && (
+          {(form.state.fieldMeta.email?.errors?.length ?? 0) > 0 && (
             <span className="text-sm text-destructive">
-              {form.state.fieldMeta.email?.errors.join(" ")}
+              {form.state.fieldMeta.email?.errors?.join(" ")}
             </span>
           )}
         </div>
 
-        {error && (
-          <div className="w-full rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-            {error}
-          </div>
-        )}
-
-        <Button type="submit" className="w-full" disabled={isSubmitting}>
-          {isSubmitting ? (
-            <Loader2 className="animate-spin" />
-          ) : (
-            "Send Verification Code"
-          )}
-        </Button>
-      </form>
-
-      <p className="text-center text-sm font-normal text-primary/60">
-        Already have an account?{" "}
-        <Link to="/login" className="text-primary hover:underline">
-          Login
-        </Link>
-      </p>
-    </div>
-  );
-}
-
-function VerifyAndPasswordForm({
-  email,
-  onBack,
-}: {
-  email: string;
-  onBack: () => void;
-}) {
-  const { signIn } = useAuthActions();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const form = useForm({
-    validatorAdapter: zodValidator(),
-    defaultValues: {
-      code: "",
-      password: "",
-      confirmPassword: "",
-    },
-    onSubmit: async ({ value }) => {
-      if (value.password !== value.confirmPassword) {
-        setError("Password tidak sama");
-        return;
-      }
-
-      setIsSubmitting(true);
-      setError(null);
-      try {
-        await signIn("password", {
-          flow: "email-verification",
-          email,
-          code: value.code,
-          password: value.password,
-        });
-      } catch {
-        setError("Kode tidak valid atau sudah expired");
-      } finally {
-        setIsSubmitting(false);
-      }
-    },
-  });
-
-  return (
-    <div className="mx-auto flex h-full w-full max-w-96 flex-col items-center justify-center gap-6">
-      <button
-        onClick={onBack}
-        className="absolute left-4 top-4 flex items-center gap-1 text-sm text-primary/60 hover:text-primary lg:left-8 lg:top-8"
-      >
-        <ArrowLeft size={16} />
-        Back
-      </button>
-
-      <div className="mb-2 flex flex-col gap-2">
-        <h3 className="text-center text-2xl font-medium text-primary">
-          Verify & Set Password
-        </h3>
-        <p className="text-center text-base font-normal text-primary/60">
-          We sent a code to <span className="font-medium">{email}</span>
-        </p>
-      </div>
-
-      <form
-        className="flex w-full flex-col items-start gap-4"
-        onSubmit={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          form.handleSubmit();
-        }}
-      >
-        {/* Verification Code */}
-        <div className="flex w-full flex-col gap-1.5">
-          <Label htmlFor="code">Verification Code</Label>
-          <form.Field
-            name="code"
-            validators={{
-              onSubmit: z.string().length(8, "Code must be 8 digits"),
-            }}
-            children={(field) => (
-              <Input
-                id="code"
-                placeholder="12345678"
-                value={field.state.value}
-                onBlur={field.handleBlur}
-                onChange={(e) => field.handleChange(e.target.value)}
-                className={`bg-transparent text-center text-lg tracking-widest ${
-                  field.state.meta?.errors.length > 0 &&
-                  "border-destructive focus-visible:ring-destructive"
-                }`}
-                maxLength={8}
-              />
-            )}
-          />
-          {form.state.fieldMeta.code?.errors.length > 0 && (
-            <span className="text-sm text-destructive">
-              {form.state.fieldMeta.code?.errors.join(" ")}
-            </span>
-          )}
-        </div>
-
-        {/* Password */}
+        {/* Password Field */}
         <div className="flex w-full flex-col gap-1.5">
           <Label htmlFor="password">Password</Label>
           <form.Field
@@ -301,9 +199,9 @@ function VerifyAndPasswordForm({
               </div>
             )}
           />
-          {form.state.fieldMeta.password?.errors.length > 0 && (
+          {(form.state.fieldMeta.password?.errors?.length ?? 0) > 0 && (
             <span className="text-sm text-destructive">
-              {form.state.fieldMeta.password?.errors.join(" ")}
+              {form.state.fieldMeta.password?.errors?.join(" ")}
             </span>
           )}
           <p className="text-xs text-primary/50">
@@ -311,7 +209,7 @@ function VerifyAndPasswordForm({
           </p>
         </div>
 
-        {/* Confirm Password */}
+        {/* Confirm Password Field */}
         <div className="flex w-full flex-col gap-1.5">
           <Label htmlFor="confirmPassword">Confirm Password</Label>
           <form.Field
@@ -347,9 +245,9 @@ function VerifyAndPasswordForm({
               </div>
             )}
           />
-          {form.state.fieldMeta.confirmPassword?.errors.length > 0 && (
+          {(form.state.fieldMeta.confirmPassword?.errors?.length ?? 0) > 0 && (
             <span className="text-sm text-destructive">
-              {form.state.fieldMeta.confirmPassword?.errors.join(" ")}
+              {form.state.fieldMeta.confirmPassword?.errors?.join(" ")}
             </span>
           )}
         </div>
@@ -369,19 +267,149 @@ function VerifyAndPasswordForm({
         </Button>
       </form>
 
+      <p className="text-center text-sm font-normal text-primary/60">
+        Already have an account?{" "}
+        <Link to="/login" className="text-primary hover:underline">
+          Login
+        </Link>
+      </p>
+
+      {/* Terms */}
+      <p className="px-6 text-center text-sm font-normal leading-normal text-primary/60">
+        By continuing, you agree to our{" "}
+        <a className="underline hover:text-primary">Terms of Service</a> and{" "}
+        <a className="underline hover:text-primary">Privacy Policy.</a>
+      </p>
+    </div>
+  );
+}
+
+function VerifyCodeForm({
+  email,
+  password,
+  onBack,
+}: {
+  email: string;
+  password: string;
+  onBack: () => void;
+}) {
+  const { signIn } = useAuthActions();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const form = useForm({
+    defaultValues: {
+      code: "",
+    },
+    onSubmit: async ({ value }) => {
+      setIsSubmitting(true);
+      setError(null);
+      try {
+        await signIn("password", {
+          flow: "email-verification",
+          email,
+          code: value.code,
+        });
+      } catch {
+        setError("Kode tidak valid atau sudah expired");
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+  });
+
+  const handleResendCode = async () => {
+    try {
+      await signIn("password", {
+        flow: "signUp",
+        email,
+        password,
+      });
+    } catch {
+      // Expected - code will be resent
+    }
+  };
+
+  return (
+    <div className="mx-auto flex h-full w-full max-w-96 flex-col items-center justify-center gap-6">
+      <button
+        onClick={onBack}
+        className="absolute left-4 top-4 flex items-center gap-1 text-sm text-primary/60 hover:text-primary lg:left-8 lg:top-8"
+      >
+        <ArrowLeft size={16} />
+        Back
+      </button>
+
+      <div className="mb-2 flex flex-col gap-2">
+        <h3 className="text-center text-2xl font-medium text-primary">
+          Verify Your Email
+        </h3>
+        <p className="text-center text-base font-normal text-primary/60">
+          We sent a verification code to{" "}
+          <span className="font-medium">{email}</span>
+        </p>
+      </div>
+
+      <form
+        className="flex w-full flex-col items-start gap-4"
+        onSubmit={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          form.handleSubmit();
+        }}
+      >
+        {/* Verification Code */}
+        <div className="flex w-full flex-col gap-1.5">
+          <Label htmlFor="code">Verification Code</Label>
+          <form.Field
+            name="code"
+            validators={{
+              onSubmit: z.string().length(8, "Code must be 8 digits"),
+            }}
+            children={(field) => (
+              <Input
+                id="code"
+                placeholder="12345678"
+                value={field.state.value}
+                onBlur={field.handleBlur}
+                onChange={(e) => field.handleChange(e.target.value)}
+                className={`bg-transparent text-center text-lg tracking-widest ${
+                  field.state.meta?.errors.length > 0 &&
+                  "border-destructive focus-visible:ring-destructive"
+                }`}
+                maxLength={8}
+              />
+            )}
+          />
+          {(form.state.fieldMeta.code?.errors?.length ?? 0) > 0 && (
+            <span className="text-sm text-destructive">
+              {form.state.fieldMeta.code?.errors?.join(" ")}
+            </span>
+          )}
+        </div>
+
+        {error && (
+          <div className="w-full rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+            {error}
+          </div>
+        )}
+
+        <Button type="submit" className="w-full" disabled={isSubmitting}>
+          {isSubmitting ? (
+            <Loader2 className="animate-spin" />
+          ) : (
+            "Verify & Create Account"
+          )}
+        </Button>
+      </form>
+
       {/* Resend Code */}
       <div className="flex w-full flex-col items-center">
         <p className="text-sm text-primary/60">Didn&apos;t receive the code?</p>
         <Button
           variant="ghost"
           className="hover:bg-transparent"
-          onClick={() => {
-            signIn("password", {
-              flow: "signUp",
-              email,
-              password: "temp-placeholder-for-resend",
-            });
-          }}
+          onClick={handleResendCode}
         >
           Resend Code
         </Button>

@@ -1,10 +1,22 @@
-import { useRouteContext, useRouter } from "@tanstack/react-router";
+import { useMatches } from "@tanstack/react-router";
+
+interface RouteContext {
+  headerTitle?: string;
+  headerDescription?: string;
+}
 
 export function Header() {
-  const router = useRouter();
-  const routeContext = useRouteContext({
-    from: router.state.matches.slice(-1)[0].id,
-  });
+  const matches = useMatches();
+
+  // Get the context from the last match that has header info
+  const routeContext = matches
+    .map((match) => match.context as RouteContext)
+    .filter((ctx) => ctx?.headerTitle)
+    .pop();
+
+  if (!routeContext?.headerTitle) {
+    return null;
+  }
 
   return (
     <header className="z-10 flex w-full flex-col border-b border-border bg-card px-6">

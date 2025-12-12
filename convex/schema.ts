@@ -3,10 +3,12 @@ import { authTables } from "@convex-dev/auth/server";
 import { v, Infer } from "convex/values";
 
 export const CURRENCIES = {
+  IDR: "idr",
   USD: "usd",
   EUR: "eur",
 } as const;
 export const currencyValidator = v.union(
+  v.literal(CURRENCIES.IDR),
   v.literal(CURRENCIES.USD),
   v.literal(CURRENCIES.EUR),
 );
@@ -37,6 +39,7 @@ const priceValidator = v.object({
   amount: v.number(),
 });
 const pricesValidator = v.object({
+  [CURRENCIES.IDR]: v.optional(priceValidator),
   [CURRENCIES.USD]: priceValidator,
   [CURRENCIES.EUR]: priceValidator,
 });

@@ -6,7 +6,6 @@ import { Input } from "@/ui/input";
 import { Button } from "@/ui/button";
 import { Label } from "@/ui/label";
 import { useForm } from "@tanstack/react-form";
-import { zodValidator } from "@tanstack/zod-form-adapter";
 import { useState } from "react";
 
 export const Route = createFileRoute("/_app/forgot-password/_layout/")({
@@ -38,7 +37,6 @@ function EmailForm({ onSubmit }: { onSubmit: (email: string) => void }) {
   const [error, setError] = useState<string | null>(null);
 
   const form = useForm({
-    validatorAdapter: zodValidator(),
     defaultValues: {
       email: "",
     },
@@ -114,7 +112,7 @@ function EmailForm({ onSubmit }: { onSubmit: (email: string) => void }) {
               />
             )}
           />
-          {form.state.fieldMeta.email?.errors.length > 0 && (
+          {(form.state.fieldMeta.email?.errors?.length ?? 0) > 0 && (
             <span className="text-sm text-destructive">
               {form.state.fieldMeta.email?.errors.join(" ")}
             </span>
@@ -162,7 +160,6 @@ function ResetPasswordForm({
   const [success, setSuccess] = useState(false);
 
   const form = useForm({
-    validatorAdapter: zodValidator(),
     defaultValues: {
       code: "",
       password: "",
@@ -260,9 +257,9 @@ function ResetPasswordForm({
               />
             )}
           />
-          {form.state.fieldMeta.code?.errors.length > 0 && (
+          {(form.state.fieldMeta.code?.errors?.length ?? 0) > 0 && (
             <span className="text-sm text-destructive">
-              {form.state.fieldMeta.code?.errors.join(" ")}
+              {form.state.fieldMeta.code?.errors?.join(" ")}
             </span>
           )}
         </div>
@@ -299,9 +296,9 @@ function ResetPasswordForm({
               </div>
             )}
           />
-          {form.state.fieldMeta.password?.errors.length > 0 && (
+          {(form.state.fieldMeta.password?.errors?.length ?? 0) > 0 && (
             <span className="text-sm text-destructive">
-              {form.state.fieldMeta.password?.errors.join(" ")}
+              {form.state.fieldMeta.password?.errors?.join(" ")}
             </span>
           )}
           <p className="text-xs text-primary/50">
@@ -345,9 +342,9 @@ function ResetPasswordForm({
               </div>
             )}
           />
-          {form.state.fieldMeta.confirmPassword?.errors.length > 0 && (
+          {(form.state.fieldMeta.confirmPassword?.errors?.length ?? 0) > 0 && (
             <span className="text-sm text-destructive">
-              {form.state.fieldMeta.confirmPassword?.errors.join(" ")}
+              {form.state.fieldMeta.confirmPassword?.errors?.join(" ")}
             </span>
           )}
         </div>

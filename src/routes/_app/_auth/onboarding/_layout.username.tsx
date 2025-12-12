@@ -3,7 +3,6 @@ import { Loader2 } from "lucide-react";
 import { Input } from "@/ui/input";
 import { Button } from "@/ui/button";
 import { useForm } from "@tanstack/react-form";
-import { zodValidator } from "@tanstack/zod-form-adapter";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { convexQuery, useConvexMutation } from "@convex-dev/react-query";
 import { api } from "~/convex/_generated/api";
@@ -30,7 +29,6 @@ export default function OnboardingUsername() {
   const navigate = useNavigate();
 
   const form = useForm({
-    validatorAdapter: zodValidator(),
     defaultValues: {
       username: "",
     },
@@ -96,9 +94,9 @@ export default function OnboardingUsername() {
         </div>
 
         <div className="flex flex-col">
-          {form.state.fieldMeta.username?.errors.length > 0 && (
+          {(form.state.fieldMeta.username?.errors?.length ?? 0) > 0 && (
             <span className="mb-2 text-sm text-destructive dark:text-destructive-foreground">
-              {form.state.fieldMeta.username?.errors.join(" ")}
+              {form.state.fieldMeta.username?.errors?.join(" ")}
             </span>
           )}
         </div>
