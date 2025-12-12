@@ -12,4 +12,34 @@ export default defineConfig({
       "@cvx": path.resolve(__dirname, "./convex"),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes("node_modules")) {
+            // React core
+            if (id.includes("react-dom") || id.includes("/react/")) {
+              return "vendor-react";
+            }
+            // TanStack libraries
+            if (id.includes("@tanstack")) {
+              return "vendor-tanstack";
+            }
+            // Convex
+            if (id.includes("convex")) {
+              return "vendor-convex";
+            }
+            // Radix UI
+            if (id.includes("@radix-ui")) {
+              return "vendor-radix";
+            }
+            // Lucide icons
+            if (id.includes("lucide-react")) {
+              return "vendor-icons";
+            }
+          }
+        },
+      },
+    },
+  },
 });

@@ -10,6 +10,7 @@ import ShadowPNG from "/images/shadow.png";
 import { useConvexAuth } from "@convex-dev/react-query";
 import { Route as AuthLoginRoute } from "@/routes/_app/login/_layout.index";
 import { Route as DashboardRoute } from "@/routes/_app/_auth/dashboard/_layout.index";
+import { useState, useEffect } from "react";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -18,10 +19,26 @@ export const Route = createFileRoute("/")({
 function Index() {
   const { isLoading, isAuthenticated } = useConvexAuth();
   const theme = "dark";
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
     <div className="relative flex h-full w-full flex-col bg-card">
       {/* Navigation */}
-      <div className="sticky top-0 z-50 mx-auto flex w-full max-w-screen-lg items-center justify-between p-6 py-3">
+      <div
+        className={cn(
+          "sticky top-4 z-50 mx-auto flex w-full max-w-screen-lg items-center justify-between px-6 py-3 transition-all duration-300 rounded-lg",
+          isScrolled &&
+            "backdrop-blur-xl bg-background/20 border border-border/20 shadow-lg shadow-background/5",
+        )}
+      >
         <Link to="/" className="flex h-10 items-center gap-1">
           <Logo />
         </Link>
@@ -135,7 +152,7 @@ function Index() {
             <span className="font-medium text-primary">
               Production-Ready Stack
             </span>
-            <br className="hidden lg:inline-block" /> Stripe integration.
+            <br className="hidden lg:inline-block" /> Mayar integration.
             TanStack-powered. Open Source.
           </p>
           <div className="mt-2 flex w-full items-center justify-center gap-2">
@@ -376,23 +393,15 @@ function Index() {
             <a
               target="_blank"
               rel="noreferrer"
-              aria-label="Stripe"
-              className="flex items-center text-primary opacity-80 grayscale transition hover:opacity-100"
-              href="https://stripe.com"
+              aria-label="Mayar"
+              className="flex items-center text-primary grayscale brightness-0 opacity-80 transition hover:opacity-100 dark:invert"
+              href="https://mayar.id"
             >
-              <svg
-                className="h-8 w-auto"
-                viewBox="0 0 60 25"
-                xmlns="http://www.w3.org/2000/svg"
-                width={60}
-                height={25}
-              >
-                <path
-                  fill="currentColor"
-                  d="M59.64 14.28h-8.06c.19 1.93 1.6 2.55 3.2 2.55 1.64 0 2.96-.37 4.05-.95v3.32a8.33 8.33 0 0 1-4.56 1.1c-4.01 0-6.83-2.5-6.83-7.48 0-4.19 2.39-7.52 6.3-7.52 3.92 0 5.96 3.28 5.96 7.5 0 .4-.04 1.26-.06 1.48zm-5.92-5.62c-1.03 0-2.17.73-2.17 2.58h4.25c0-1.85-1.07-2.58-2.08-2.58zM40.95 20.3c-1.44 0-2.32-.6-2.9-1.04l-.02 4.63-4.12.87V5.57h3.76l.08 1.02a4.7 4.7 0 0 1 3.23-1.29c2.9 0 5.62 2.6 5.62 7.4 0 5.23-2.7 7.6-5.65 7.6zM40 8.95c-.95 0-1.54.34-1.97.81l.02 6.12c.4.44.98.78 1.95.78 1.52 0 2.54-1.65 2.54-3.87 0-2.15-1.04-3.84-2.54-3.84zM28.24 5.57h4.13v14.44h-4.13V5.57zm0-4.7L32.37 0v3.36l-4.13.88V.88zm-4.32 9.35v9.79H19.8V5.57h3.7l.12 1.22c1-1.77 3.07-1.41 3.62-1.22v3.79c-.52-.17-2.29-.43-3.32.86zm-8.55 4.72c0 2.43 2.6 1.68 3.12 1.46v3.36c-.55.3-1.54.54-2.89.54a4.15 4.15 0 0 1-4.27-4.24l.01-13.17 4.02-.86v3.54h3.14V9.1h-3.13v5.85zm-4.91.7c0 2.97-2.31 4.66-5.73 4.66a11.2 11.2 0 0 1-4.46-.93v-3.93c1.38.75 3.1 1.31 4.46 1.31.92 0 1.53-.24 1.53-1C6.26 13.77 0 14.51 0 9.95 0 7.04 2.28 5.3 5.62 5.3c1.36 0 2.72.2 4.09.75v3.88a9.23 9.23 0 0 0-4.1-1.06c-.86 0-1.44.25-1.44.9 0 1.85 6.29.97 6.29 5.88z"
-                  fillRule="evenodd"
-                />
-              </svg>
+              <img
+                src="/images/mayar-logo.png"
+                alt="Mayar"
+                className="h-12 w-auto"
+              />
             </a>
             <a
               target="_blank"
@@ -595,7 +604,7 @@ function Index() {
         <ThemeSwitcherHome />
 
         <div className="flex flex-col items-center gap-2 sm:flex-row">
-          <p className="flex items-center whitespace-nowrap text-center text-sm font-medium text-primary/60">
+          <span className="flex items-center whitespace-nowrap text-center text-sm font-medium text-primary/60">
             Based on&nbsp;
             <a
               href="https://remix-saas.fly.dev"
@@ -605,13 +614,14 @@ function Index() {
             >
               the Open-Source Remix SaaS by&nbsp;
             </a>
-            <p className="flex items-center whitespace-nowrap text-center text-sm font-medium text-primary/60">
-              <a href="https://bento.me/danielkanem?utm_source=remixconvexsaas">
-                DanielKanem.
-              </a>
-            </p>
-          </p>
-          <p className="flex items-center whitespace-nowrap text-center text-sm font-medium text-primary/60">
+            <a
+              href="https://bento.me/danielkanem?utm_source=remixconvexsaas"
+              className="text-primary hover:underline"
+            >
+              DanielKanem.
+            </a>
+          </span>
+          <span className="flex items-center whitespace-nowrap text-center text-sm font-medium text-primary/60">
             Source code available on&nbsp;{" "}
             <a
               href="https://github.com/get-convex/convex-saas"
@@ -621,7 +631,7 @@ function Index() {
             >
               GitHub.
             </a>
-          </p>
+          </span>
         </div>
       </footer>
 

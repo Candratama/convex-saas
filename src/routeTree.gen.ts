@@ -14,8 +14,12 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppAuthRouteImport } from './routes/_app/_auth'
+import { Route as AppRegisterLayoutRouteImport } from './routes/_app/register/_layout'
 import { Route as AppLoginLayoutRouteImport } from './routes/_app/login/_layout'
+import { Route as AppForgotPasswordLayoutRouteImport } from './routes/_app/forgot-password/_layout'
+import { Route as AppRegisterLayoutIndexRouteImport } from './routes/_app/register/_layout.index'
 import { Route as AppLoginLayoutIndexRouteImport } from './routes/_app/login/_layout.index'
+import { Route as AppForgotPasswordLayoutIndexRouteImport } from './routes/_app/forgot-password/_layout.index'
 import { Route as AppAuthOnboardingLayoutRouteImport } from './routes/_app/_auth/onboarding/_layout'
 import { Route as AppAuthDashboardLayoutRouteImport } from './routes/_app/_auth/dashboard/_layout'
 import { Route as AppAuthDashboardLayoutIndexRouteImport } from './routes/_app/_auth/dashboard/_layout.index'
@@ -25,7 +29,9 @@ import { Route as AppAuthDashboardLayoutCheckoutRouteImport } from './routes/_ap
 import { Route as AppAuthDashboardLayoutSettingsIndexRouteImport } from './routes/_app/_auth/dashboard/_layout.settings.index'
 import { Route as AppAuthDashboardLayoutSettingsBillingRouteImport } from './routes/_app/_auth/dashboard/_layout.settings.billing'
 
+const AppRegisterRouteImport = createFileRoute('/_app/register')()
 const AppLoginRouteImport = createFileRoute('/_app/login')()
+const AppForgotPasswordRouteImport = createFileRoute('/_app/forgot-password')()
 const AppAuthOnboardingRouteImport = createFileRoute('/_app/_auth/onboarding')()
 const AppAuthDashboardRouteImport = createFileRoute('/_app/_auth/dashboard')()
 
@@ -38,9 +44,19 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppRegisterRoute = AppRegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppLoginRoute = AppLoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppForgotPasswordRoute = AppForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAuthRoute = AppAuthRouteImport.update({
@@ -57,15 +73,34 @@ const AppAuthDashboardRoute = AppAuthDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AppAuthRoute,
 } as any)
+const AppRegisterLayoutRoute = AppRegisterLayoutRouteImport.update({
+  id: '/_layout',
+  getParentRoute: () => AppRegisterRoute,
+} as any)
 const AppLoginLayoutRoute = AppLoginLayoutRouteImport.update({
   id: '/_layout',
   getParentRoute: () => AppLoginRoute,
+} as any)
+const AppForgotPasswordLayoutRoute = AppForgotPasswordLayoutRouteImport.update({
+  id: '/_layout',
+  getParentRoute: () => AppForgotPasswordRoute,
+} as any)
+const AppRegisterLayoutIndexRoute = AppRegisterLayoutIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppRegisterLayoutRoute,
 } as any)
 const AppLoginLayoutIndexRoute = AppLoginLayoutIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppLoginLayoutRoute,
 } as any)
+const AppForgotPasswordLayoutIndexRoute =
+  AppForgotPasswordLayoutIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AppForgotPasswordLayoutRoute,
+  } as any)
 const AppAuthOnboardingLayoutRoute = AppAuthOnboardingLayoutRouteImport.update({
   id: '/_layout',
   getParentRoute: () => AppAuthOnboardingRoute,
@@ -113,10 +148,14 @@ const AppAuthDashboardLayoutSettingsBillingRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/forgot-password': typeof AppForgotPasswordLayoutRouteWithChildren
   '/login': typeof AppLoginLayoutRouteWithChildren
+  '/register': typeof AppRegisterLayoutRouteWithChildren
   '/dashboard': typeof AppAuthDashboardLayoutRouteWithChildren
   '/onboarding': typeof AppAuthOnboardingLayoutRouteWithChildren
+  '/forgot-password/': typeof AppForgotPasswordLayoutIndexRoute
   '/login/': typeof AppLoginLayoutIndexRoute
+  '/register/': typeof AppRegisterLayoutIndexRoute
   '/dashboard/checkout': typeof AppAuthDashboardLayoutCheckoutRoute
   '/dashboard/settings': typeof AppAuthDashboardLayoutSettingsRouteWithChildren
   '/onboarding/username': typeof AppAuthOnboardingLayoutUsernameRoute
@@ -126,7 +165,9 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/forgot-password': typeof AppForgotPasswordLayoutIndexRoute
   '/login': typeof AppLoginLayoutIndexRoute
+  '/register': typeof AppRegisterLayoutIndexRoute
   '/dashboard': typeof AppAuthDashboardLayoutIndexRoute
   '/onboarding': typeof AppAuthOnboardingLayoutRouteWithChildren
   '/dashboard/checkout': typeof AppAuthDashboardLayoutCheckoutRoute
@@ -139,13 +180,19 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
   '/_app/_auth': typeof AppAuthRouteWithChildren
+  '/_app/forgot-password': typeof AppForgotPasswordRouteWithChildren
+  '/_app/forgot-password/_layout': typeof AppForgotPasswordLayoutRouteWithChildren
   '/_app/login': typeof AppLoginRouteWithChildren
   '/_app/login/_layout': typeof AppLoginLayoutRouteWithChildren
+  '/_app/register': typeof AppRegisterRouteWithChildren
+  '/_app/register/_layout': typeof AppRegisterLayoutRouteWithChildren
   '/_app/_auth/dashboard': typeof AppAuthDashboardRouteWithChildren
   '/_app/_auth/dashboard/_layout': typeof AppAuthDashboardLayoutRouteWithChildren
   '/_app/_auth/onboarding': typeof AppAuthOnboardingRouteWithChildren
   '/_app/_auth/onboarding/_layout': typeof AppAuthOnboardingLayoutRouteWithChildren
+  '/_app/forgot-password/_layout/': typeof AppForgotPasswordLayoutIndexRoute
   '/_app/login/_layout/': typeof AppLoginLayoutIndexRoute
+  '/_app/register/_layout/': typeof AppRegisterLayoutIndexRoute
   '/_app/_auth/dashboard/_layout/checkout': typeof AppAuthDashboardLayoutCheckoutRoute
   '/_app/_auth/dashboard/_layout/settings': typeof AppAuthDashboardLayoutSettingsRouteWithChildren
   '/_app/_auth/onboarding/_layout/username': typeof AppAuthOnboardingLayoutUsernameRoute
@@ -157,10 +204,14 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/forgot-password'
     | '/login'
+    | '/register'
     | '/dashboard'
     | '/onboarding'
+    | '/forgot-password/'
     | '/login/'
+    | '/register/'
     | '/dashboard/checkout'
     | '/dashboard/settings'
     | '/onboarding/username'
@@ -170,7 +221,9 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/forgot-password'
     | '/login'
+    | '/register'
     | '/dashboard'
     | '/onboarding'
     | '/dashboard/checkout'
@@ -182,13 +235,19 @@ export interface FileRouteTypes {
     | '/'
     | '/_app'
     | '/_app/_auth'
+    | '/_app/forgot-password'
+    | '/_app/forgot-password/_layout'
     | '/_app/login'
     | '/_app/login/_layout'
+    | '/_app/register'
+    | '/_app/register/_layout'
     | '/_app/_auth/dashboard'
     | '/_app/_auth/dashboard/_layout'
     | '/_app/_auth/onboarding'
     | '/_app/_auth/onboarding/_layout'
+    | '/_app/forgot-password/_layout/'
     | '/_app/login/_layout/'
+    | '/_app/register/_layout/'
     | '/_app/_auth/dashboard/_layout/checkout'
     | '/_app/_auth/dashboard/_layout/settings'
     | '/_app/_auth/onboarding/_layout/username'
@@ -218,11 +277,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/register': {
+      id: '/_app/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof AppRegisterRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/login': {
       id: '/_app/login'
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof AppLoginRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/forgot-password': {
+      id: '/_app/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof AppForgotPasswordRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/_auth': {
@@ -246,6 +319,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAuthDashboardRouteImport
       parentRoute: typeof AppAuthRoute
     }
+    '/_app/register/_layout': {
+      id: '/_app/register/_layout'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof AppRegisterLayoutRouteImport
+      parentRoute: typeof AppRegisterRoute
+    }
     '/_app/login/_layout': {
       id: '/_app/login/_layout'
       path: '/login'
@@ -253,12 +333,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppLoginLayoutRouteImport
       parentRoute: typeof AppLoginRoute
     }
+    '/_app/forgot-password/_layout': {
+      id: '/_app/forgot-password/_layout'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof AppForgotPasswordLayoutRouteImport
+      parentRoute: typeof AppForgotPasswordRoute
+    }
+    '/_app/register/_layout/': {
+      id: '/_app/register/_layout/'
+      path: '/'
+      fullPath: '/register/'
+      preLoaderRoute: typeof AppRegisterLayoutIndexRouteImport
+      parentRoute: typeof AppRegisterLayoutRoute
+    }
     '/_app/login/_layout/': {
       id: '/_app/login/_layout/'
       path: '/'
       fullPath: '/login/'
       preLoaderRoute: typeof AppLoginLayoutIndexRouteImport
       parentRoute: typeof AppLoginLayoutRoute
+    }
+    '/_app/forgot-password/_layout/': {
+      id: '/_app/forgot-password/_layout/'
+      path: '/'
+      fullPath: '/forgot-password/'
+      preLoaderRoute: typeof AppForgotPasswordLayoutIndexRouteImport
+      parentRoute: typeof AppForgotPasswordLayoutRoute
     }
     '/_app/_auth/onboarding/_layout': {
       id: '/_app/_auth/onboarding/_layout'
@@ -405,6 +506,31 @@ const AppAuthRouteChildren: AppAuthRouteChildren = {
 const AppAuthRouteWithChildren =
   AppAuthRoute._addFileChildren(AppAuthRouteChildren)
 
+interface AppForgotPasswordLayoutRouteChildren {
+  AppForgotPasswordLayoutIndexRoute: typeof AppForgotPasswordLayoutIndexRoute
+}
+
+const AppForgotPasswordLayoutRouteChildren: AppForgotPasswordLayoutRouteChildren =
+  {
+    AppForgotPasswordLayoutIndexRoute: AppForgotPasswordLayoutIndexRoute,
+  }
+
+const AppForgotPasswordLayoutRouteWithChildren =
+  AppForgotPasswordLayoutRoute._addFileChildren(
+    AppForgotPasswordLayoutRouteChildren,
+  )
+
+interface AppForgotPasswordRouteChildren {
+  AppForgotPasswordLayoutRoute: typeof AppForgotPasswordLayoutRouteWithChildren
+}
+
+const AppForgotPasswordRouteChildren: AppForgotPasswordRouteChildren = {
+  AppForgotPasswordLayoutRoute: AppForgotPasswordLayoutRouteWithChildren,
+}
+
+const AppForgotPasswordRouteWithChildren =
+  AppForgotPasswordRoute._addFileChildren(AppForgotPasswordRouteChildren)
+
 interface AppLoginLayoutRouteChildren {
   AppLoginLayoutIndexRoute: typeof AppLoginLayoutIndexRoute
 }
@@ -429,14 +555,41 @@ const AppLoginRouteWithChildren = AppLoginRoute._addFileChildren(
   AppLoginRouteChildren,
 )
 
+interface AppRegisterLayoutRouteChildren {
+  AppRegisterLayoutIndexRoute: typeof AppRegisterLayoutIndexRoute
+}
+
+const AppRegisterLayoutRouteChildren: AppRegisterLayoutRouteChildren = {
+  AppRegisterLayoutIndexRoute: AppRegisterLayoutIndexRoute,
+}
+
+const AppRegisterLayoutRouteWithChildren =
+  AppRegisterLayoutRoute._addFileChildren(AppRegisterLayoutRouteChildren)
+
+interface AppRegisterRouteChildren {
+  AppRegisterLayoutRoute: typeof AppRegisterLayoutRouteWithChildren
+}
+
+const AppRegisterRouteChildren: AppRegisterRouteChildren = {
+  AppRegisterLayoutRoute: AppRegisterLayoutRouteWithChildren,
+}
+
+const AppRegisterRouteWithChildren = AppRegisterRoute._addFileChildren(
+  AppRegisterRouteChildren,
+)
+
 interface AppRouteChildren {
   AppAuthRoute: typeof AppAuthRouteWithChildren
+  AppForgotPasswordRoute: typeof AppForgotPasswordRouteWithChildren
   AppLoginRoute: typeof AppLoginRouteWithChildren
+  AppRegisterRoute: typeof AppRegisterRouteWithChildren
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppAuthRoute: AppAuthRouteWithChildren,
+  AppForgotPasswordRoute: AppForgotPasswordRouteWithChildren,
   AppLoginRoute: AppLoginRouteWithChildren,
+  AppRegisterRoute: AppRegisterRouteWithChildren,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

@@ -9,4 +9,4 @@ export const SITE_URL = process.env.SITE_URL;
 
 // Add Mayar configuration
 export const MAYAR_API_KEY = process.env.MAYAR_API_KEY;
-export const MAYAR_API_URL = process.env.MAYAR_API_URL || "https://api.mayar.id/hl/v1";
+export const MAYAR_API_URL = process.env.MAYAR_API_URL || "https://api.mayar.id/ks/v1";

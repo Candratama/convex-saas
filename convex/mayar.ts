@@ -19,9 +19,9 @@ export class MayarPaymentService {
   private readonly apiKey: string;
 
   constructor() {
-    this.apiUrl = MAYAR_API_URL || "https://api.mayar.id/hl/v1";
+    this.apiUrl = MAYAR_API_URL || "https://api.mayar.id/ks/v1";
     this.apiKey = MAYAR_API_KEY || "";
-    
+
     if (!this.apiKey) {
       console.warn("Mayar API key not configured");
     }
@@ -29,49 +29,70 @@ export class MayarPaymentService {
 
   async createPaymentInvoice(args: {
     userId: string;
+    userEmail: string;
+    userName: string;
     planId: string;
+    planName: string;
     amount: number;
-    currency: string;
     planInterval: "month" | "year";
   }) {
     if (!this.apiKey) {
       throw new Error("Mayar API key not configured");
     }
 
-    // Generate redirect URL with payment ID
-    const paymentRecordId = `payment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const redirectUrl = `${SITE_URL}/dashboard/checkout?payment_redirect=true&payment_id=${paymentRecordId}`;
+    // Set expiration date (30 days from now)
+    const expiredAt = new Date();
+    expiredAt.setDate(expiredAt.getDate() + 30);
+
+    // Construct description
+    const intervalDays = args.planInterval === "month" ? 30 : 365;
+    const description = `${args.planName} Plan - ${intervalDays} Days`;
 
     try {
+      // Mayar API uses /invoice/create endpoint with items array
       const response = await fetch(`${this.apiUrl}/invoice/create`, {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${this.apiKey}`,
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${this.apiKey}`,
         },
         body: JSON.stringify({
-          amount: args.amount,
-          currency: args.currency,
-          redirect_url: redirectUrl,
-          metadata: {
-            user_id: args.userId,
-            plan_id: args.planId,
-            plan_interval: args.planInterval,
-            payment_record_id: paymentRecordId,
-          },
+          name: args.userName || "Customer",
+          mobile: "081234567890",
+          email: args.userEmail,
+          redirectUrl: `${SITE_URL}/dashboard/settings/billing?payment_redirect=true`,
+          description: description,
+          expiredAt: expiredAt.toISOString(),
+          items: [
+            {
+              rate: args.amount,
+              description: description,
+              quantity: 1,
+            },
+          ],
         }),
       });
 
       if (!response.ok) {
+        const errorBody = await response.text();
+        console.error("Mayar API error response:", errorBody);
         throw new Error(`Mayar API error: ${response.statusText}`);
       }
 
       const data = await response.json();
-      
+
+      // Mayar returns transactionId and link
+      const transactionId = data.data?.transactionId;
+      const paymentUrl = data.data?.link;
+
+      if (!transactionId || !paymentUrl) {
+        console.error("Invalid Mayar response:", data);
+        throw new Error("Invalid response from Mayar API - missing transactionId or link");
+      }
+
       return {
-        invoiceId: data.id,
-        paymentUrl: data.payment_url,
-        paymentRecordId,
+        invoiceId: transactionId,
+        paymentUrl: paymentUrl,
       };
     } catch (error) {
       console.error("Failed to create Mayar invoice:", error);
@@ -79,7 +100,7 @@ export class MayarPaymentService {
     }
   }
 
-  async verifyPayment(paymentId: string) {
+  async verifyPayment(invoiceId: string) {
     if (!this.apiKey) {
       throw new Error("Mayar API key not configured");
     }
@@ -88,8 +109,8 @@ export class MayarPaymentService {
       const response = await fetch(`${this.apiUrl}/transactions`, {
         method: "GET",
         headers: {
-          "Authorization": `Bearer ${this.apiKey}`,
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${this.apiKey}`,
         },
       });
 
@@ -97,18 +118,32 @@ export class MayarPaymentService {
         throw new Error(`Mayar API error: ${response.statusText}`);
       }
 
-      const transactions = await response.json();
-      const transaction = transactions.data?.find((t: { id: string; status: string; amount: number; currency: string }) => t.id === paymentId);
+      const responseData = await response.json();
+      const transactions = responseData.data || responseData;
+
+      // Find transaction matching by paymentLinkId or paymentLinkTransactionId
+      const transaction = transactions.find((t: Record<string, unknown>) =>
+        t.paymentLinkId === invoiceId || t.paymentLinkTransactionId === invoiceId
+      );
 
       if (!transaction) {
-        throw new Error("Payment transaction not found");
+        console.log("No matching transaction found for invoice:", invoiceId);
+        return {
+          status: "pending",
+          amount: 0,
+          currency: "IDR",
+          verified: false,
+        };
       }
 
+      console.log("Found transaction:", transaction.id, "status:", transaction.status);
+
       return {
-        status: transaction.status,
-        amount: transaction.amount,
-        currency: transaction.currency,
+        status: transaction.status as string,
+        amount: transaction.amount as number,
+        currency: (transaction.currency as string) || "IDR",
         verified: transaction.status === "paid",
+        transactionId: transaction.id as string,
       };
     } catch (error) {
       console.error("Failed to verify payment:", error);
@@ -272,7 +307,7 @@ export const createSubscriptionCheckout = action({
     }
 
     // Get price for selected interval and currency
-    const currencyKey = args.currency as "usd" | "eur";
+    const currencyKey = args.currency as "idr" | "usd" | "eur";
     const price = plan.prices[args.planInterval][currencyKey];
     if (!price) {
       throw new Error("Price not found for selected interval and currency");
@@ -295,10 +330,12 @@ export const createSubscriptionCheckout = action({
       // Create Mayar invoice
       const mayarService = new MayarPaymentService();
       const invoice = await mayarService.createPaymentInvoice({
-        userId: args.userId,
-        planId: args.planId,
+        userId: args.userId.toString(),
+        userEmail: user.email || "",
+        userName: user.name || user.email || "Customer",
+        planId: args.planId.toString(),
+        planName: plan.name,
         amount: price.amount,
-        currency: args.currency,
         planInterval: args.planInterval,
       });
 
@@ -373,8 +410,8 @@ export const verifyPaymentAndActivate = internalAction({
       throw new Error("Plan not found");
     }
 
-    const currencyKey = payment.currency as "usd" | "eur";
-    const price = plan.prices[payment.planInterval][currencyKey];
+    const currencyKey = payment.currency as "idr" | "usd" | "eur";
+    const price = plan.prices[payment.planInterval][currencyKey] || plan.prices[payment.planInterval].usd;
 
     // Calculate period dates
     const now = Math.floor(Date.now() / 1000);
@@ -412,7 +449,7 @@ export const verifyPaymentAndActivate = internalAction({
       paymentId: payment._id,
       status: "completed",
       verifiedAt: now,
-      mayarTransactionId: verification.status, // Store transaction info
+      mayarTransactionId: verification.transactionId || verification.status,
     });
 
     return { success: true, message: "Payment verified and subscription activated" };
@@ -429,5 +466,52 @@ export const verifyPayment = action({
     return await ctx.runAction(internal.mayar.verifyPaymentAndActivate, {
       paymentRecordId: args.paymentRecordId,
     });
+  },
+});
+
+// Get the latest pending payment for automatic verification after redirect
+export const getLatestPendingPayment = internalQuery({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    const payments = await ctx.db
+      .query("paymentTransactions")
+      .withIndex("userId", (q) => q.eq("userId", args.userId))
+      .filter((q) => q.eq(q.field("status"), "pending"))
+      .order("desc")
+      .take(1);
+    return payments[0] || null;
+  },
+});
+
+// Auto-verify: finds pending payment for user and verifies it
+export const verifyPendingPayment = action({
+  args: {},
+  handler: async (ctx): Promise<{ success: boolean; message: string }> => {
+    const user = await ctx.runQuery(api.app.getCurrentUser);
+    if (!user) {
+      return { success: false, message: "User not authenticated" };
+    }
+
+    // Get the latest pending payment for this user
+    const pendingPayment = await ctx.runQuery(internal.mayar.getLatestPendingPayment, {
+      userId: user._id,
+    });
+
+    if (!pendingPayment) {
+      return { success: false, message: "No pending payment found" };
+    }
+
+    // Verify and activate
+    try {
+      return await ctx.runAction(internal.mayar.verifyPaymentAndActivate, {
+        paymentRecordId: pendingPayment._id,
+      });
+    } catch (error) {
+      console.error("Payment verification failed:", error);
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : "Payment verification failed"
+      };
+    }
   },
 });

@@ -24,11 +24,10 @@ export function callAll<Args extends unknown[]>(
 
 /**
  * Locales.
+ * Always return IDR since Mayar only supports Indonesian Rupiah.
  */
 export function getLocaleCurrency() {
-  return navigator.languages.includes("en-US")
-    ? CURRENCIES.USD
-    : CURRENCIES.EUR;
+  return CURRENCIES.IDR;
 }
 
 export const useSignOut = () => {

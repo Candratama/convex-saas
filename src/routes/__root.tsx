@@ -19,6 +19,10 @@ const TanStackRouterDevtools =
         })),
       );
 
+interface RouteContext {
+  title?: string;
+}
+
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient;
 }>()({
@@ -26,8 +30,8 @@ export const Route = createRootRouteWithContext<{
     const router = useRouter();
     const matchWithTitle = [...router.state.matches]
       .reverse()
-      .find((d) => d.routeContext?.title);
-    const title = matchWithTitle?.routeContext.title || "Convex SaaS";
+      .find((d) => (d.context as RouteContext)?.title);
+    const title = (matchWithTitle?.context as RouteContext)?.title || "Convex SaaS";
 
     return (
       <>

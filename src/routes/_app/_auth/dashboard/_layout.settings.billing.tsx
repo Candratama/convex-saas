@@ -1,28 +1,77 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Switch } from "@/ui/switch";
 import { Button } from "@/ui/button";
 import { createFileRoute } from "@tanstack/react-router";
 import { api } from "~/convex/_generated/api";
 import { Id } from "~/convex/_generated/dataModel";
 import { convexQuery, useConvexAction } from "@convex-dev/react-query";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getLocaleCurrency } from "@/utils/misc";
-import { CURRENCIES, PLANS } from "@cvx/schema";
+import { PLANS } from "@cvx/schema";
 
 interface Plan {
   _id: Id<"plans">;
   name: string;
   description: string;
   prices: {
-    month: { usd: { stripeId: string; amount: number }; eur: { stripeId: string; amount: number } };
-    year: { usd: { stripeId: string; amount: number }; eur: { stripeId: string; amount: number } };
+    month: {
+      idr?: { stripeId: string; amount: number };
+      usd: { stripeId: string; amount: number };
+      eur: { stripeId: string; amount: number };
+    };
+    year: {
+      idr?: { stripeId: string; amount: number };
+      usd: { stripeId: string; amount: number };
+      eur: { stripeId: string; amount: number };
+    };
   };
+}
+
+// Helper function to get currency symbol
+function getCurrencySymbol(currency: string): string {
+  switch (currency) {
+    case "idr":
+      return "Rp";
+    case "usd":
+      return "$";
+    case "eur":
+      return "€";
+    default:
+      return "Rp";
+  }
+}
+
+// Helper function to format price (IDR doesn't use cents)
+function formatPrice(amount: number, currency: string): string {
+  if (currency === "idr") {
+    return new Intl.NumberFormat("id-ID").format(amount);
+  }
+  return (amount / 100).toFixed(2);
+}
+
+// Helper function to get price amount with fallback to USD
+function getPriceAmount(
+  prices: Plan["prices"],
+  interval: "month" | "year",
+  currency: string,
+): number {
+  const intervalPrices = prices[interval];
+  if (currency === "idr" && intervalPrices.idr) {
+    return intervalPrices.idr.amount;
+  }
+  if (currency === "eur") {
+    return intervalPrices.eur.amount;
+  }
+  return intervalPrices.usd.amount;
 }
 
 export const Route = createFileRoute(
   "/_app/_auth/dashboard/_layout/settings/billing",
 )({
   component: BillingSettings,
+  validateSearch: (search: Record<string, unknown>) => ({
+    payment_redirect: search.payment_redirect === "true" || search.payment_redirect === true,
+  }),
   beforeLoad: async ({ context }) => {
     await context.queryClient.ensureQueryData(
       convexQuery(api.app.getActivePlans, {}),
@@ -36,6 +85,8 @@ export const Route = createFileRoute(
 });
 
 export default function BillingSettings() {
+  const { payment_redirect } = Route.useSearch();
+  const queryClient = useQueryClient();
   const { data: user } = useQuery(convexQuery(api.app.getCurrentUser, {}));
   const { data: plans } = useQuery(convexQuery(api.app.getActivePlans, {}));
 
@@ -51,12 +102,52 @@ export default function BillingSettings() {
       : "month",
   );
 
+  const [verificationStatus, setVerificationStatus] = useState<{
+    loading: boolean;
+    message: string | null;
+    success: boolean | null;
+  }>({ loading: false, message: null, success: null });
+
   // Mayar payment functions
   const { mutateAsync: createSubscriptionCheckout } = useMutation({
     mutationFn: useConvexAction(api.mayar.createSubscriptionCheckout),
   });
 
+  const { mutateAsync: verifyPendingPayment } = useMutation({
+    mutationFn: useConvexAction(api.mayar.verifyPendingPayment),
+  });
+
   const currency = getLocaleCurrency();
+
+  // Handle payment redirect verification
+  useEffect(() => {
+    if (payment_redirect && user && !verificationStatus.loading && verificationStatus.success === null) {
+      setVerificationStatus({ loading: true, message: "Verifying payment...", success: null });
+
+      verifyPendingPayment({})
+        .then((result) => {
+          setVerificationStatus({
+            loading: false,
+            message: result.message,
+            success: result.success,
+          });
+
+          if (result.success) {
+            // Refresh user data to show updated subscription
+            queryClient.invalidateQueries({ queryKey: ["getCurrentUser"] });
+            // Remove query param from URL
+            window.history.replaceState({}, "", window.location.pathname);
+          }
+        })
+        .catch((error) => {
+          setVerificationStatus({
+            loading: false,
+            message: error instanceof Error ? error.message : "Verification failed",
+            success: false,
+          });
+        });
+    }
+  }, [payment_redirect, user, verifyPendingPayment, queryClient, verificationStatus.loading, verificationStatus.success]);
 
   const handleCreateSubscriptionCheckout = async () => {
     if (!user || !selectedPlanId) {
@@ -87,22 +178,34 @@ export default function BillingSettings() {
 
   return (
     <div className="flex h-full w-full flex-col gap-6">
+      {/* Payment Verification Status */}
+      {verificationStatus.message && (
+        <div
+          className={`flex w-full items-center gap-2 rounded-lg border p-4 ${
+            verificationStatus.loading
+              ? "border-blue-200 bg-blue-50 text-blue-700"
+              : verificationStatus.success
+                ? "border-green-200 bg-green-50 text-green-700"
+                : "border-red-200 bg-red-50 text-red-700"
+          }`}
+        >
+          {verificationStatus.loading && (
+            <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+            </svg>
+          )}
+          <span className="font-medium">{verificationStatus.message}</span>
+        </div>
+      )}
+
       <div className="flex w-full flex-col gap-2 p-6 py-2">
         <h2 className="text-xl font-medium text-primary">
           This is a demo app.
         </h2>
         <p className="text-sm font-normal text-primary/60">
-          Convex SaaS is a demo app that uses Stripe test environment. You can
-          find a list of test card numbers on the{" "}
-          <a
-            href="https://stripe.com/docs/testing#cards"
-            target="_blank"
-            rel="noreferrer"
-            className="font-medium text-primary/80 underline"
-          >
-            Stripe docs
-          </a>
-          .
+          Convex SaaS is a demo app that uses Mayar payment gateway. You can
+          test the payment flow with real payment methods in sandbox mode.
         </p>
       </div>
 
@@ -122,7 +225,8 @@ export default function BillingSettings() {
           </p>
         </div>
 
-        {user.subscription?.planId === plans.free._id && (
+        {/* Show plan selection if user has no subscription OR is on free plan */}
+        {(!user.subscription || user.subscription?.planId === plans.free._id) && (
           <div className="flex w-full flex-col items-center justify-evenly gap-2 border-border p-6 pt-0">
             {Object.values(plans).map((plan: Plan) => (
               <div
@@ -144,10 +248,11 @@ export default function BillingSettings() {
                     </span>
                     {plan._id !== plans.free._id && (
                       <span className="flex items-center rounded-md bg-primary/10 px-1.5 text-sm font-medium text-primary/80">
-                        {currency === CURRENCIES.USD ? "$" : "€"}{" "}
-                        {selectedPlanInterval === "month"
-                          ? plan.prices.month[currency].amount / 100
-                          : plan.prices.year[currency].amount / 100}{" "}
+                        {getCurrencySymbol(currency)}{" "}
+                        {formatPrice(
+                          getPriceAmount(plan.prices, selectedPlanInterval, currency),
+                          currency,
+                        )}{" "}
                         / {selectedPlanInterval === "month" ? "month" : "year"}
                       </span>
                     )}
@@ -220,12 +325,12 @@ export default function BillingSettings() {
           <p className="text-sm font-normal text-primary/60">
             You will not be charged for testing the subscription upgrade.
           </p>
-          {user.subscription?.planId === plans.free._id && (
+          {(!user.subscription || user.subscription?.planId === plans.free._id) && (
             <Button
               type="submit"
               size="sm"
               onClick={handleCreateSubscriptionCheckout}
-              disabled={selectedPlanId === plans.free._id}
+              disabled={!selectedPlanId || selectedPlanId === plans.free._id}
             >
               Upgrade to PRO
             </Button>
@@ -246,9 +351,9 @@ export default function BillingSettings() {
 
         <div className="flex min-h-14 w-full items-center justify-between rounded-lg rounded-t-none border-t border-border bg-secondary px-6 py-3 dark:bg-card">
           <p className="text-sm font-normal text-primary/60">
-            You will be redirected to the Stripe Customer Portal.
+            You will be redirected to Mayar payment page.
           </p>
-          <Button type="submit" size="sm" /* onClick={handleCreateCustomerPortal} */>
+          <Button type="submit" size="sm" disabled>
             Manage
           </Button>
         </div>

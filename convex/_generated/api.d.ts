@@ -16,8 +16,7 @@ import type * as env from "../env.js";
 import type * as http from "../http.js";
 import type * as init from "../init.js";
 import type * as mayar from "../mayar.js";
-import type * as otp_ResendOTP from "../otp/ResendOTP.js";
-import type * as otp_VerificationCodeEmail from "../otp/VerificationCodeEmail.js";
+import type * as password_PasswordAuth from "../password/PasswordAuth.js";
 
 import type {
   ApiFromModules,
@@ -34,8 +33,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   init: typeof init;
   mayar: typeof mayar;
-  "otp/ResendOTP": typeof otp_ResendOTP;
-  "otp/VerificationCodeEmail": typeof otp_VerificationCodeEmail;
+  "password/PasswordAuth": typeof password_PasswordAuth;
 }>;
 
 /**
