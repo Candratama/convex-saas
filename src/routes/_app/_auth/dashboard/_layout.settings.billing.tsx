@@ -71,6 +71,7 @@ export const Route = createFileRoute(
   component: BillingSettings,
   validateSearch: (search: Record<string, unknown>) => ({
     payment_redirect: search.payment_redirect === "true" || search.payment_redirect === true,
+    payment_id: typeof search.payment_id === "string" ? search.payment_id : undefined,
   }),
   beforeLoad: async ({ context }) => {
     await context.queryClient.ensureQueryData(
@@ -85,7 +86,7 @@ export const Route = createFileRoute(
 });
 
 export default function BillingSettings() {
-  const { payment_redirect } = Route.useSearch();
+  const { payment_redirect, payment_id } = Route.useSearch();
   const queryClient = useQueryClient();
   const { data: user } = useQuery(convexQuery(api.app.getCurrentUser, {}));
   const { data: plans } = useQuery(convexQuery(api.app.getActivePlans, {}));
@@ -117,6 +118,10 @@ export default function BillingSettings() {
     mutationFn: useConvexAction(api.mayar.verifyPendingPayment),
   });
 
+  const { mutateAsync: verifyPayment } = useMutation({
+    mutationFn: useConvexAction(api.mayar.verifyPayment),
+  });
+
   const currency = getLocaleCurrency();
 
   // Handle payment redirect verification
@@ -124,7 +129,12 @@ export default function BillingSettings() {
     if (payment_redirect && user && !verificationStatus.loading && verificationStatus.success === null) {
       setVerificationStatus({ loading: true, message: "Verifying payment...", success: null });
 
-      verifyPendingPayment({})
+      // Use explicit payment_id if available, otherwise fallback to auto-find
+      const verifyPromise = payment_id
+        ? verifyPayment({ paymentRecordId: payment_id })
+        : verifyPendingPayment({});
+
+      verifyPromise
         .then((result) => {
           setVerificationStatus({
             loading: false,
@@ -147,7 +157,7 @@ export default function BillingSettings() {
           });
         });
     }
-  }, [payment_redirect, user, verifyPendingPayment, queryClient, verificationStatus.loading, verificationStatus.success]);
+  }, [payment_redirect, payment_id, user, verifyPayment, verifyPendingPayment, queryClient, verificationStatus.loading, verificationStatus.success]);
 
   const handleCreateSubscriptionCheckout = async () => {
     if (!user || !selectedPlanId) {

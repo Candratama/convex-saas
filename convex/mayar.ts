@@ -12,6 +12,7 @@ import {
 import { v } from "convex/values";
 import { api, internal } from "~/convex/_generated/api";
 import { MAYAR_API_KEY, MAYAR_API_URL, SITE_URL } from "@cvx/env";
+import type { Id } from "~/convex/_generated/dataModel";
 import { PLANS, intervalValidator } from "@cvx/schema";
 
 export class MayarPaymentService {
@@ -35,6 +36,7 @@ export class MayarPaymentService {
     planName: string;
     amount: number;
     planInterval: "month" | "year";
+    paymentRecordId: string;
   }) {
     if (!this.apiKey) {
       throw new Error("Mayar API key not configured");
@@ -60,7 +62,7 @@ export class MayarPaymentService {
           name: args.userName || "Customer",
           mobile: "081234567890",
           email: args.userEmail,
-          redirectUrl: `${SITE_URL}/dashboard/settings/billing?payment_redirect=true`,
+          redirectUrl: `${SITE_URL}/dashboard/settings/billing?payment_redirect=true&payment_id=${args.paymentRecordId}`,
           description: description,
           expiredAt: expiredAt.toISOString(),
           items: [
@@ -337,13 +339,13 @@ export const createSubscriptionCheckout = action({
         planName: plan.name,
         amount: price.amount,
         planInterval: args.planInterval,
+        paymentRecordId: paymentRecordId.toString(),
       });
 
       // Update payment record with Mayar invoice ID
       await ctx.runMutation(internal.mayar.updatePaymentTransaction, {
         paymentId: paymentRecordId,
         mayarInvoiceId: invoice.invoiceId,
-        redirectUrl: `${SITE_URL}/dashboard/checkout?payment_redirect=true&payment_id=${paymentRecordId}`,
       });
 
       return invoice.paymentUrl;
@@ -459,12 +461,12 @@ export const verifyPaymentAndActivate = internalAction({
 // Public wrapper for frontend verification
 export const verifyPayment = action({
   args: {
-    paymentRecordId: v.id("paymentTransactions"),
+    paymentRecordId: v.string(),
   },
   handler: async (ctx, args): Promise<{ success: boolean; message: string }> => {
     // Call the internal action to verify and activate
     return await ctx.runAction(internal.mayar.verifyPaymentAndActivate, {
-      paymentRecordId: args.paymentRecordId,
+      paymentRecordId: args.paymentRecordId as Id<"paymentTransactions">,
     });
   },
 });
